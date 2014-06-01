@@ -1,0 +1,9 @@
+{
+  "name": "saloon",
+  "preferGlobal": "true",
+  "version": "0.0.1",
+  "author": "Artin Rebekale",
+  "dependencies": {
+    "blessed": "~0.0.30"
+  }
+}
