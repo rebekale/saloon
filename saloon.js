@@ -10,12 +10,14 @@ var box = [];
 
 var coinData = {};
 
-var l = 'left';
+var l = '0%';
 var r = '';
 var b = '';
-var t = 'top';
-
-
+var t = '0%';
+var P = 0;
+var tabs = {};
+var tcount = 0;
+var tpos = 0;
 
 
 console.log("Saloon starting up:  " + new Date());
@@ -47,6 +49,8 @@ function loadCoins() {
 for (var coin in cfg.pools) {
   //console.log(" Loading stats for " + coin);
   coinData[coin] = {};
+  tabs[tcount] = coin;
+  tcount++;
   var poolstatusUrl = cfg.pools[coin].api + "getpoolstatus&api_key=" + cfg.pools[coin].apiKey;
   var poolinfoUrl= cfg.pools[coin].api + "getpoolinfo&api_key=" + cfg.pools[coin].apiKey;
   
@@ -76,7 +80,13 @@ function showHeader() {
 	var day = coinData[coin].reward / (coinData[coin].difficulty * Math.pow(2,32) / ( 6000 * 1000 ) / 3600 / 24 ) ;
 	day = roundNumber(day,3);
 	box[coin].deleteLine(0);
-	box[coin].insertLine(0,coin + "\t"+ coinData[coin].poolHashrate + "/" + coinData[coin].netHashrate  + "mh/s\t" + coinData[coin].poolPercentage + "\t" + day);
+	box[coin].deleteLine(0);
+	box[coin].deleteLine(0);
+	box[coin].deleteLine(0);
+	box[coin].insertLine(0, "\t" + coin+"/day\t" + day);
+	box[coin].insertLine(0, "------------------------");
+	box[coin].insertLine(0, coinData[coin].poolHashrate + "/" + coinData[coin].netHashrate  + "mh/s\t" + coinData[coin].poolPercentage ); 
+	box[coin].insertLine(0, "Pool / Net \t \t%");
 
 }
 
@@ -99,14 +109,60 @@ function lookupCoinBittrex( coin, url) {
     });
     res.on('end', function() {
 
-	var d = JSON.parse(data) ;
+    var d;
+try {
+	d = JSON.parse(data) ;
+}
+catch (e) {
+  //console.log(e);
+}
+finally {
 //	console.log(d.getpoolstatus);
+var options = {
+  top : 8,
+  left : 2,
+  width : "33%",
+  height : "44%",
+  content: " line 0?",
+  label : 'Bittrex',
+  tags: true,
+  border: {
+    type: 'line'
+  },
+  style: {
+    fg: 'white',
+    border: {
+      fg: '#f0f0f0'
+    },
+    hover: {
+      bg: 'green'
+    }
+  }
+};
+   var rate = 0;
+   var tot = 0;
+   var qty = 0 ;
+
 	[0,1,2].forEach( function(idx) {
-	box[coin].insertLine(1, "[B]\t"  + d.result.buy[idx].Rate + "\t" + d.result.buy[idx].Quantity +"\t" + d.result.buy[idx].Rate * d.result.buy[idx].Quantity +"\t" + .01/ d.result.buy[idx].Rate );
+		//console.log(tot);
+		//console.log(qty);
+		tot +=  d.result.buy[idx].Rate * d.result.buy[idx].Quantity;
+		qty +=  d.result.buy[idx].Quantity;
+//b2.insertLine(1, "[B]\t"  + d.result.buy[idx].Rate + "\t" + d.result.buy[idx].Quantity +"\t" + d.result.buy[idx].Rate * d.result.buy[idx].Quantity +"\t" + .01/ d.result.buy[idx].Rate );
+        });
+        rate = roundNumber( tot/qty, 8); 
+	//b2.insertLine(1,"0.01: " + roundNumber(0.01 / rate, 2));
+	//b2.insertLine(1,"Inv: " + roundNumber(qty * rate ,1));
+	//b2.insertLine(1,"Qty: " + roundNumber(qty,1));
+	//b2.insertLine(1,"Rate: " + rate);
+ //b2.insertTop(1,"testing");	
+  options.content= "Rate: "+ rate + "\n" +    "Qty: " + roundNumber(qty,1) + "\n" + "Inv: " + roundNumber(qty * rate ,4) + "\n" + "0.01: " + roundNumber(0.01 / rate, 2) ;
+  var b2 = blessed.box( options);
+	box[coin].append(b2);
 	screen.render();
 	  //console.log("  [B]\t" + coin + "\t" + d.result.buy[idx].Rate + "\t" + d.result.buy[idx].Quantity +"\t" + d.result.buy[idx].Rate * d.result.buy[idx].Quantity +"\t" + .01/ d.result.buy[idx].Rate +"\t[bittrex]");
-        });
 		
+}
     });
 
   });  
@@ -129,16 +185,49 @@ function lookupCoinCryptsy( coin, url) {
     });
     res.on('end', function() {
 	var d = JSON.parse(data) ;
+var options = {
+  top : 8,
+  right : 2,
+  width : "32%",
+  height : "44%",
+  content: " line 0?",
+  label : 'Cryptsy',
+  tags: true,
+  border: {
+    type: 'line'
+  },
+  style: {
+    fg: 'white',
+    border: {
+      fg: '#f0f0f0'
+    },
+    hover: {
+      bg: 'green'
+    }
+  }
+};
+   var rate = 0;
+   var tot = 0;
+   var qty = 0 ;
+
 	//console.log(d.return[coin].buyorders[0]);
 	[0,1,2].forEach( function(idx) {
 	
         var price = d.return[coin].buyorders[idx].price;	
         var quantity = d.return[coin].buyorders[idx].quantity;	
-	box[coin].insertLine(1, "[C]\t" + price+ "\t" + quantity +"\t" + price * quantity + "\t" + .01 / price  + "\t[cryptsy]");
+        qty += quantity * 1;
+	tot += quantity * price;
+
+	//box[coin].insertLine(1, "[C]\t" + price+ "\t" + quantity +"\t" + price * quantity + "\t" + .01 / price  + "\t[cryptsy]");
 	
-screen.render();
 	//console.log("  [C]\t" + coin + "\t" + price+ "\t" + quantity +"\t" + price * quantity + "\t" + .01 / price  + "\t[cryptsy]");
         });
+        rate = roundNumber( tot/qty, 8); 
+
+  options.content= "Rate: "+ rate + "\n" +    "Qty: " + roundNumber(qty,1) + "\n" + "Inv: " + roundNumber(qty * rate ,4) + "\n" + "0.01: " + roundNumber(0.01 / rate, 2) ;
+  var b2 = blessed.box( options);
+	box[coin].append(b2);
+screen.render();
 		
     });
 
@@ -164,15 +253,15 @@ try {
 	d = JSON.parse(data) ;
 }
 catch (e) {
-  //console.log(e);
+  
 }
 finally {
   
 	if (d && typeof d.getpoolstatus !== 'undefined' ) {
-/*	coinData[coin].poolHashrate = roundNumber(d.getpoolstatus.data.hashrate,3);
-	coinData[coin].netHashrate = roundNumber(d.getpoolstatus.data.nethashrate,3);
+/*	coinData[coin].poolHashrate = roundNumber\(d.getpoolstatus.data.hashrate,3);
+	coinData[coin].netHashrate = roundNumber\(d.getpoolstatus.data.nethashrate,3);
 	coinData[coin].difficulty = d.getpoolstatus.data.networkdiff;
-	coinData[coin].poolPercentage = roundNumber(d.getpoolstatus.data.hashrate  /  d.getpoolstatus.data.nethashrate,6);
+	coinData[coin].poolPercentage = roundNumber\(d.getpoolstatus.data.hashrate  /  d.getpoolstatus.data.nethashrate,6);
 */
 	coinData[coin].poolHashrate = roundNumber(units.convert(d.getpoolstatus.data.hashrate + " kb to mb"),1);
 	coinData[coin].netHashrate = roundNumber(units.convert(d.getpoolstatus.data.nethashrate + " b to mb"),1);
@@ -239,8 +328,8 @@ finally {
 
 function addBox(coin) {
 var options = {
-  width : "32%",
-  height : "44%",
+  width : "22%",
+  height : "34%",
   content: "Coin  Pool  Net  Ratio",
   tags: true,
   border: {
@@ -261,7 +350,7 @@ if (r == 1) {
 }  else {
   options.left = l
 }
-options.label = coin;
+options.label = "{bold}"+coin+"{/bold}";
 if (b == 1) {
   options.bottom = b;
 } else {
@@ -273,17 +362,20 @@ box[coin] = blessed.box( options);
 
 
 screen.append(box[coin]);
-  if (r == '1' ) {
-    l = 'left';
-    t = '';
-    b = '1';
+  
+  P++;
+  l = P*25 + "%";
+  
+  if (P == '4' ) {
     r = '';
-  } else if (l == 'center' ) {
-    l = '';
-    r = '1';
-  } else if (l == 'left' ) {
-    l = 'center';
-  }
+    b = '1';
+    t = '';
+    l = '0%';
+    P = 0;
+  } 
+  
+ 
+
 }
 
 
@@ -296,6 +388,14 @@ screen.append(box[coin]);
 screen.key(['escape', 'q', 'C-c'], function(ch, key) {
   return process.exit(0);
 });
+screen.key(['tab' ], function(ch, key) {
+  if (tpos == tcount) {
+    tpos = 0;
+  } 
+  box[tabs[tpos]].focus();
+  screen.render(); 
+  
+});
 screen.key(['space' ], function(ch, key) {
   showHeader();
   loadCoins();
@@ -306,3 +406,5 @@ box["CPTL"].focus();
 
 // Render the screen.
 screen.render();
+  showHeader();
+  loadCoins();
