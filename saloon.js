@@ -2,10 +2,13 @@ var cfg = require("./config/config.js");
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
+var units = require('node-units');
 
 var blessed = require('blessed');
 var screen = blessed.screen();
 var box = [];
+
+var coinData = {};
 
 var l = 'left';
 var r = '';
@@ -34,13 +37,21 @@ for (var miner in cfg.miners) {
   });
 };
 
+function roundNumber(number, decimals) {     
+	var newnumber = new Number(number+'').toFixed(parseInt(decimals));
+	var value = parseFloat(newnumber);
+	return value;
+}
+
 function loadCoins() {
 for (var coin in cfg.pools) {
   //console.log(" Loading stats for " + coin);
-
-  var url = cfg.pools[coin].api + "getpoolstatus&api_key=" + cfg.pools[coin].apiKey;
+  coinData[coin] = {};
+  var poolstatusUrl = cfg.pools[coin].api + "getpoolstatus&api_key=" + cfg.pools[coin].apiKey;
+  var poolinfoUrl= cfg.pools[coin].api + "getpoolinfo&api_key=" + cfg.pools[coin].apiKey;
   
-  lookupCoinStats(coin,url);
+  lookupCoinStats(coin,poolstatusUrl);
+  lookupCoinReward(coin,poolinfoUrl);
   if (typeof box[coin] === 'undefined') {
     addBox(coin);
   }
@@ -59,6 +70,18 @@ for (var coin in cfg.pools) {
 }
 
 loadCoins();
+
+function showHeader() {
+  for (var coin in box) {
+	var day = coinData[coin].reward / (coinData[coin].difficulty * Math.pow(2,32) / ( 6000 * 1000 ) / 3600 / 24 ) ;
+	day = roundNumber(day,3);
+	box[coin].deleteLine(0);
+	box[coin].insertLine(0,coin + "\t"+ coinData[coin].poolHashrate + "/" + coinData[coin].netHashrate  + "mh/s\t" + coinData[coin].poolPercentage + "\t" + day);
+
+}
+
+}
+
 function lookupCoinBittrex( coin, url) {
   var client;
   var checkURL = new RegExp("^https");
@@ -136,15 +159,33 @@ function lookupCoinStats( coin, url) {
         data +=	 chunk;
     });
     res.on('end', function() {
-	var d = JSON.parse(data) ;
-	if (typeof d.getpoolstatus !== 'undefined' ) {
-	box[coin].deleteLine(0);
-	box[coin].insertLine(0,coin + "\t"+ d.getpoolstatus.data.hashrate + "\t" + d.getpoolstatus.data.nethashrate  + "\t" + d.getpoolstatus.data.hashrate  /  d.getpoolstatus.data.nethashrate);
-screen.render();
+    var d;
+try {
+	d = JSON.parse(data) ;
+}
+catch (e) {
+  //console.log(e);
+}
+finally {
+  
+	if (d && typeof d.getpoolstatus !== 'undefined' ) {
+/*	coinData[coin].poolHashrate = roundNumber(d.getpoolstatus.data.hashrate,3);
+	coinData[coin].netHashrate = roundNumber(d.getpoolstatus.data.nethashrate,3);
+	coinData[coin].difficulty = d.getpoolstatus.data.networkdiff;
+	coinData[coin].poolPercentage = roundNumber(d.getpoolstatus.data.hashrate  /  d.getpoolstatus.data.nethashrate,6);
+*/
+	coinData[coin].poolHashrate = roundNumber(units.convert(d.getpoolstatus.data.hashrate + " kb to mb"),1);
+	coinData[coin].netHashrate = roundNumber(units.convert(d.getpoolstatus.data.nethashrate + " b to mb"),1);
+	coinData[coin].difficulty = d.getpoolstatus.data.networkdiff;
+	coinData[coin].poolPercentage = roundNumber(d.getpoolstatus.data.hashrate  /  d.getpoolstatus.data.nethashrate,6);
+	//box[coin].deleteLine(0);
+	//box[coin].insertLine(0,coin + "\t"+ d.getpoolstatus.data.hashrate + "\t" + d.getpoolstatus.data.nethashrate  + "\t" + d.getpoolstatus.data.hashrate  /  d.getpoolstatus.data.nethashrate);
+//screen.render();
 	
 	} else {
 		//console.log(d);
 	}
+}
 		
     });
 
@@ -152,7 +193,45 @@ screen.render();
 
 }
 
+function lookupCoinReward( coin, url) {
+  var client;
+  var checkURL = new RegExp("^https");
+  if (checkURL.test(url)) {
+    client = https;
+  } else {
+    client = http;
+  }
+  var req = client.get(url, function(res) {
+    res.setEncoding('utf8');
+    var data = ""; 
+    res.on('data', function (chunk) {
+        data +=	 chunk;
+    });
+    res.on('end', function() {
+try {
+	var d = JSON.parse(data) ;
+}
+catch (e) {
+  //console.log(e);
+}
+finally {
+  
+	if (d && typeof d.getpoolinfo!== 'undefined' ) {
+	coinData[coin].reward = d.getpoolinfo.data.reward;
+	//box[coin].deleteLine(0);
+	//box[coin].insertLine(0,coin + "\t"+ d.getpoolstatus.data.hashrate + "\t" + d.getpoolstatus.data.nethashrate  + "\t" + d.getpoolstatus.data.hashrate  /  d.getpoolstatus.data.nethashrate);
+//screen.render();
+	
+	} else {
+		//console.log(d);
+	}
+}
+		
+    });
 
+  });  
+
+}
 
 // Create a screen object.
 
@@ -182,6 +261,7 @@ if (r == 1) {
 }  else {
   options.left = l
 }
+options.label = coin;
 if (b == 1) {
   options.bottom = b;
 } else {
@@ -189,6 +269,7 @@ if (b == 1) {
 }
 console.log(coin + t + b + l + r );
 box[coin] = blessed.box( options);
+
 
 
 screen.append(box[coin]);
@@ -216,6 +297,7 @@ screen.key(['escape', 'q', 'C-c'], function(ch, key) {
   return process.exit(0);
 });
 screen.key(['space' ], function(ch, key) {
+  showHeader();
   loadCoins();
 });
 
