@@ -1,0 +1,78 @@
+module.exports = { 
+   pools : {
+   'CPTL' : {
+		poolUrl : "stratum+tcp://stratum.poolest.com:3336",
+		worker : "rebekale.gaw1",
+		password : "gawp",
+		apiKey : "",
+		api : "http://cptl.poolest.com/index.php?page=api&action=",
+		exchanges : [ 
+			"https://bittrex.com/api/v1/public/getorderbook?market=BTC-CPTL&type=both&depth=50"
+		],
+	   }, 
+   'GUN' : {
+		poolUrl : "stratum+tcp://gun-us.lifeforce.info:7878",
+		worker : "rebekale.gaw1",
+		password : "gawp",
+		apiKey : "",
+		api : "http://gun.lifeforce.info/index.php?page=api&action=",
+		exchanges : [ 
+			"https://bittrex.com/api/v1/public/getorderbook?market=BTC-GUN&type=both&depth=50"
+		],
+	   }, 
+   'EMC2' : {
+		poolUrl : "stratum+tcp://emc2-us.lifeforce.info:3333",
+		worker : "rebekale.gaw1",
+		password : "gawp",
+		apiKey : "",
+		api : "http://emc2.lifeforce.info/index.php?page=api&action=",
+		exchanges : [ 
+			"http://pubapi.cryptsy.com/api.php?method=singleorderdata&marketid=188",
+			"https://bittrex.com/api/v1/public/getorderbook?market=BTC-EMC2&type=both&depth=50"
+		],
+	   }, 
+   'DGC' : {
+		poolUrl : "stratum+tcp://us1.stratum.cryptopools.com:3333",
+		worker : "rebekale.gaw1",
+		password : "gawp",
+		apiKey : "",
+		api : "http://dgc.cryptopools.com/index.php?page=api&action=",
+		exchanges : [ 
+			"http://pubapi.cryptsy.com/api.php?method=singleorderdata&marketid=26",
+		],
+	   }, 
+   'DOGE' : {
+		poolUrl : "stratum+tcp://stratum2.dogechain.info:3334",
+		worker : "rebekale.gaw1",
+		password : "gawp",
+		apiKey : "",
+		api : "https://pool.dogechain.info/index.php?page=api&action=",
+		exchanges : [ 
+			"http://pubapi.cryptsy.com/api.php?method=singleorderdata&marketid=132",
+			"https://bittrex.com/api/v1/public/getorderbook?market=BTC-DOGE&type=both&depth=50"
+		],
+	   }, 
+   'POT' : {
+		poolUrl : "stratum+tcp://pot-us.lifeforce.info:3663",
+		worker : "rebekale.gaw1",
+		password : "gawp",
+		apiKey : "",
+		api : "http://pot.lifeforce.info/index.php?page=api&action=",
+		exchanges : [ 
+			"https://bittrex.com/api/v1/public/getorderbook?market=BTC-POT&type=both&depth=50"
+		],
+	   }, 
+    },
+    miners : {
+	gridseed : { 
+		devPattern : 'ttyACM',
+		code : 'minerd -t 6 -s 4 --freq=900 --gc3355=',
+	},
+	fury : {
+		devPattern : 'ttyUSB',
+		code : 'cgminer  --nocheck-golden --chips-count 6 --ltc-clk 328 -S ',
+	}
+    }
+
+};
+
