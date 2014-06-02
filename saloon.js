@@ -17,6 +17,7 @@ var t = '0%';
 var P = 0;
 var tabs = {};
 var tcount = 0;
+var rcount = 0;
 var tpos = 0;
 
 
@@ -119,10 +120,10 @@ catch (e) {
 finally {
 //	console.log(d.getpoolstatus);
 var options = {
-  top : 8,
-  left : 2,
-  width : "33%",
-  height : "44%",
+  top : 6,
+  left : 1,
+  width : "48%",
+  height : "64%",
   content: " line 0?",
   label : 'Bittrex',
   tags: true,
@@ -186,10 +187,10 @@ function lookupCoinCryptsy( coin, url) {
     res.on('end', function() {
 	var d = JSON.parse(data) ;
 var options = {
-  top : 8,
-  right : 2,
-  width : "32%",
-  height : "44%",
+  top : 6,
+  right : 1,
+  width : "48%",
+  height : "64%",
   content: " line 0?",
   label : 'Cryptsy',
   tags: true,
@@ -328,8 +329,8 @@ finally {
 
 function addBox(coin) {
 var options = {
-  width : "22%",
-  height : "34%",
+  width : "18%",
+  height : "25%",
   content: "Coin  Pool  Net  Ratio",
   tags: true,
   border: {
@@ -364,12 +365,12 @@ box[coin] = blessed.box( options);
 screen.append(box[coin]);
   
   P++;
-  l = P*25 + "%";
+  l = P*20 + "%";
   
-  if (P == '4' ) {
+  if (P == '5' ) {
     r = '';
-    b = '1';
-    t = '';
+    rcount++;
+    t = rcount * 25 + "%";
     l = '0%';
     P = 0;
   } 
